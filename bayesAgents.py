@@ -368,13 +368,22 @@ class VPIAgent(BayesAgent):
         *Do not* take into account the "time elapsed" cost of traveling to each
         of the houses---this is calculated elsewhere in the code.
         """
+        from inference import inferenceByVariableElimination
 
-        leftExpectedValue = 0
-        rightExpectedValue = 0
+        factor = inferenceByVariableElimination(self.bayesNet, [FOOD_HOUSE_VAR, GHOST_HOUSE_VAR], evidence, eliminationOrder)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        leftFoodProb = 0.0
+        rightFoodProb = 0.0
+        
+        for a in factor.getAllPossibleAssignmentDicts():
+            prob = factor.getProbability(a)
+            if a[FOOD_HOUSE_VAR] == TOP_LEFT_VAL and a[GHOST_HOUSE_VAR] == TOP_RIGHT_VAL:
+                leftFoodProb += prob
+            elif a[FOOD_HOUSE_VAR] == TOP_RIGHT_VAL and a[GHOST_HOUSE_VAR] == TOP_LEFT_VAL:
+                rightFoodProb += prob
 
+        leftExpectedValue = leftFoodProb * WON_GAME_REWARD + (1 - leftFoodProb) * GHOST_COLLISION_REWARD
+        rightExpectedValue = rightFoodProb * WON_GAME_REWARD + (1 - rightFoodProb) * GHOST_COLLISION_REWARD
         return leftExpectedValue, rightExpectedValue
 
     def getExplorationProbsAndOutcomes(self, evidence):
@@ -439,9 +448,13 @@ class VPIAgent(BayesAgent):
         expectedValue = 0
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        expected = 0
+        for prob, new in self.getExplorationProbsAndOutcomes(evidence):
+            leftVal, rightVal = self.computeEnterValues(new, enterEliminationOrder)
+            maxVal = max(leftVal, rightVal)
+            expected += prob * maxVal
+        return expected
 
-        return expectedValue
 
     def getAction(self, gameState):
 
